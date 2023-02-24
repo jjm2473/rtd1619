@@ -69,6 +69,7 @@ sub hash_cmd() {
 
 	$len == 64 and return "mkhash sha256";
 	$len == 32 and return "mkhash md5";
+	$len == 40 and return "sha1sum";
 	return undef;
 }
 

@@ -264,12 +264,19 @@ define DownloadMethod/darcs
 	)
 endef
 
+define DownloadMethod/lcp
+	echo "Checking out files from local folder"; \
+	cp $(TOPDIR)/$(subst file://,,$(URL))/$(FILE) $(DL_DIR)/
+endef
+
+
 Validate/cvs=VERSION SUBDIR
 Validate/svn=VERSION SUBDIR
 Validate/git=VERSION SUBDIR
 Validate/bzr=VERSION SUBDIR
 Validate/hg=VERSION SUBDIR
 Validate/darcs=VERSION SUBDIR
+Validate/lcp=VERSION SUBDIR
 
 define Download/Defaults
   URL:=

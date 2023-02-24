@@ -150,13 +150,11 @@ define KernelPackage/nf-flow
   TITLE:=Netfilter flowtable support
   KCONFIG:= \
 	CONFIG_NETFILTER_INGRESS=y \
-	CONFIG_NF_FLOW_TABLE \
-	CONFIG_NF_FLOW_TABLE_HW
+	CONFIG_NF_FLOW_TABLE
   DEPENDS:=+kmod-nf-conntrack
   FILES:= \
-	$(LINUX_DIR)/net/netfilter/nf_flow_table.ko \
-	$(LINUX_DIR)/net/netfilter/nf_flow_table_hw.ko
-  AUTOLOAD:=$(call AutoProbe,nf_flow_table nf_flow_table_hw)
+	$(LINUX_DIR)/net/netfilter/nf_flow_table.ko
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table)
 endef
 
 $(eval $(call KernelPackage,nf-flow))
