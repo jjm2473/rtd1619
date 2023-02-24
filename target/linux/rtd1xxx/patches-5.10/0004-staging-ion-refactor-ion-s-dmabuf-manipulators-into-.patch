@@ -40,7 +40,7 @@ diff --git a/drivers/staging/android/ion/ion.c b/drivers/staging/android/ion/ion
 index 580e50e37..51d13c1f6 100644
 --- a/drivers/staging/android/ion/ion.c
 +++ b/drivers/staging/android/ion/ion.c
-@@ -17,259 +17,38 @@
+@@ -17,14 +17,12 @@
  #include <linux/fs.h>
  #include <linux/kthread.h>
  #include <linux/list.h>
@@ -55,9 +55,11 @@ index 580e50e37..51d13c1f6 100644
  
  #include "ion_private.h"
  
- static struct ion_device *internal_dev;
+@@ -32,246 +30,26 @@
  static int heap_id;
  
+ 
+-
 -static struct sg_table *dup_sg_table(struct sg_table *table)
 -{
 -	struct sg_table *new_table;
@@ -266,7 +268,7 @@ index 580e50e37..51d13c1f6 100644
 -
 -	pr_debug("%s: len %zu heap_id_mask %u flags %x\n", __func__,
 -		 len, heap_id_mask, flags);
--
+-	
 -	buffer = ion_buffer_alloc(internal_dev, len, heap_id_mask, flags);
 -	if (IS_ERR(buffer))
 -		return ERR_CAST(buffer);

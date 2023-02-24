@@ -41,7 +41,7 @@ diff --git a/drivers/staging/android/ion/ion.c b/drivers/staging/android/ion/ion
 index cbff09675..580e50e37 100644
 --- a/drivers/staging/android/ion/ion.c
 +++ b/drivers/staging/android/ion/ion.c
-@@ -26,119 +26,11 @@
+@@ -26,121 +26,12 @@
  #include <linux/uaccess.h>
  #include <linux/vmalloc.h>
  
@@ -130,12 +130,15 @@ index cbff09675..580e50e37 100644
 -	else
 -		ion_buffer_destroy(buffer);
 -}
--
+ 
 -static void *ion_buffer_kmap_get(struct ion_buffer *buffer)
 -{
 -	void *vaddr;
 -
 -	if (buffer->kmap_cnt) {
+-		if (buffer->kmap_cnt == INT_MAX)
+-			return ERR_PTR(-EOVERFLOW);
+-
 -		buffer->kmap_cnt++;
 -		return buffer->vaddr;
 -	}
@@ -158,11 +161,10 @@ index cbff09675..580e50e37 100644
 -		buffer->vaddr = NULL;
 -	}
 -}
--
+ 
  static struct sg_table *dup_sg_table(struct sg_table *table)
  {
- 	struct sg_table *new_table;
-@@ -274,7 +166,7 @@ static void ion_dma_buf_release(struct dma_buf *dmabuf)
+@@ -277,7 +168,7 @@
  {
  	struct ion_buffer *buffer = dmabuf->priv;
  
@@ -171,7 +173,7 @@ index cbff09675..580e50e37 100644
  }
  
  static int ion_dma_buf_begin_cpu_access(struct dma_buf *dmabuf,
-@@ -341,39 +233,14 @@ static const struct dma_buf_ops dma_buf_ops = {
+@@ -344,39 +235,14 @@
  static struct dma_buf *ion_alloc_dmabuf(size_t len, unsigned int heap_id_mask,
  					unsigned int flags)
  {
@@ -208,12 +210,13 @@ index cbff09675..580e50e37 100644
 -
 -	if (!buffer)
 -		return ERR_PTR(-ENODEV);
- 
+-
++	
 +	buffer = ion_buffer_alloc(internal_dev, len, heap_id_mask, flags);
  	if (IS_ERR(buffer))
  		return ERR_CAST(buffer);
  
-@@ -384,7 +251,7 @@ static struct dma_buf *ion_alloc_dmabuf(size_t len, unsigned int heap_id_mask,
+@@ -387,7 +253,7 @@
  
  	dmabuf = dma_buf_export(&exp_info);
  	if (IS_ERR(dmabuf))
