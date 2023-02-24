@@ -7,9 +7,9 @@ mac80211_phy_to_path() {
 	[ -n "$path" ] || return
 
 	path="${path##/sys/devices/}"
-	case "$path" in
-		platform*/pci*) path="${path##platform/}";;
-	esac
+	#case "$path" in
+	#	platform*/pci*) path="${path##platform/}";;
+	#esac
 
 	local p
 	local seq=""

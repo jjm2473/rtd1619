@@ -2,6 +2,7 @@
 . /lib/netifd/netifd-wireless.sh
 . /lib/netifd/hostapd.sh
 . /lib/netifd/mac80211.sh
+. /lib/netifd/rtkwifiu.sh
 
 init_wireless_driver "$@"
 
@@ -589,6 +590,8 @@ mac80211_iw_interface_add() {
 	iw phy "$phy" interface add "$ifname" type "$type" $wdsflag >/dev/null 2>&1
 	rc="$?"
 
+	is_rtl_drv_phy $phy && rc=0
+
 	[ "$rc" = 233 ] && {
 		# Device might have just been deleted, give the kernel some time to finish cleaning it up
 		sleep 1
@@ -651,6 +654,7 @@ mac80211_prepare_vif() {
 
 	json_get_vars ifname mode ssid wds powersave macaddr enable wpa_psk_file vlan_file
 
+	is_rtl_drv_phy $phy && ifname=$(check_rtl_phy_intf_name $phy $if_idx)
 	[ -n "$ifname" ] || ifname="wlan${phy#phy}${if_idx:+-$if_idx}"
 	if_idx=$((${if_idx:-0} + 1))
 
@@ -1008,6 +1012,9 @@ mac80211_interface_cleanup() {
 	local phy="$1"
 	local primary_ap=$(uci -q -P /var/state get wireless._${phy}.aplist)
 	primary_ap=${primary_ap%% *}
+
+	#is_rtl_drv_phy $phy && wlist=$(check_rtl_phy_intf_name $phy all)
+	#[ -n "$wlist" ] || wlist=$(list_phy_interfaces "$phy")
 
 	mac80211_vap_cleanup hostapd "${primary_ap}"
 	mac80211_vap_cleanup wpa_supplicant "$(uci -q -P /var/state get wireless._${phy}.splist)"

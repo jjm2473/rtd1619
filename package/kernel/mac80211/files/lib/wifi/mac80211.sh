@@ -1,5 +1,6 @@
 #!/bin/sh
 . /lib/netifd/mac80211.sh
+. /lib/netifd/rtkwifiu.sh
 
 append DRIVERS "mac80211"
 
@@ -158,6 +159,9 @@ detect_mac80211() {
 		channel=""
 		htmode=""
 		ht_capab=""
+		phy_opt=""
+
+		is_rtl_multi_phy $dev && append phy_opt "set wireless.radio${devidx}.phy=$dev$N"
 
 		get_band_defaults "$dev"
 
@@ -171,6 +175,7 @@ detect_mac80211() {
 		uci -q batch <<-EOF
 			set wireless.radio${devidx}=wifi-device
 			set wireless.radio${devidx}.type=mac80211
+			${phy_opt}
 			${dev_id}
 			set wireless.radio${devidx}.channel=${channel}
 			set wireless.radio${devidx}.band=${mode_band}
