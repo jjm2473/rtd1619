@@ -593,7 +593,7 @@ define KernelPackage/iosched-bfq
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for BFQ I/O scheduler
   KCONFIG:= \
-    CONFIG_IOSCHED_BFQ \
+    CONFIG_IOSCHED_BFQ=y \
     CONFIG_BFQ_GROUP_IOSCHED=y \
     CONFIG_BFQ_CGROUP_DEBUG=n
   FILES:= \
