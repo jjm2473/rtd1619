@@ -4,6 +4,11 @@ PKG_DRIVERS += \
 	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8723bs rtl8821ae \
 	rtl8xxxu rtw88
 
+PKG_DRIVERS += \
+	rtkwifiu \
+	rtkwifiu-rtl8822cs rtkwifiu-rtl8852bs \
+	rtkwifiu-rtl8852be
+
 config-$(call config_package,rtl8180) += RTL8180
 config-$(call config_package,rtl8187) += RTL8187
 
@@ -27,6 +32,11 @@ config-y += STAGING
 
 config-$(call config_package,rtw88) += RTW88 RTW88_CORE RTW88_PCI
 config-y += RTW88_8822BE RTW88_8822CE RTW88_8723DE
+
+config-$(call config_package,rtkwifiu) += RTKWIFIU
+config-$(call config_package,rtkwifiu-rtl8852be) += RTL8852BE
+config-$(call config_package,rtkwifiu-rtl8822cs) += RTL8822CS
+config-$(call config_package,rtkwifiu-rtl8852bs) += RTL8852BS
 
 define KernelPackage/rtl818x/Default
   $(call KernelPackage/mac80211/Default)
@@ -203,4 +213,127 @@ define KernelPackage/rtl8723bs/description
  This option enables support for RTL8723BS SDIO drivers, such as the wifi found
  on the 1st gen Intel Compute Stick, the CHIP and many other Intel Atom and ARM
  based devices.
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu),)
+RTKWIFIU_DIR := $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtkwifiu
+RTKWIFIU_PKG := rtkwifiu-rtl8822be rtkwifiu-rtl8822ce rtkwifiu-rtl8822cs rtkwifiu-rtl8852be rtkwifiu-rtl8852bs
+#PKG_DRIVERS += $(RTKWIFIU_PKG)
+BACKPORT_VER_FILES := os_dep/linux/ioctl_cfg80211.h os_dep/linux/ioctl_cfg80211.c os_dep/linux/rtw_cfgvendor.h \
+		      os_dep/linux/rtw_cfgvendor.c os_dep/linux/wifi_regd.c core/rtw_ap.c
+RESTORE_LINUX_API_FILES := os_dep/linux/ioctl_cfg80211.c
+CONFIG_RTKWIFI_COMMON := y
+endif
+
+PKG_RTKWIFIU_NAME:=rtkwifiu
+PKG_RTKWIFIU_VERSION:=f0fb197
+PKG_RTKWIFIU_SOURCE:=$(PKG_RTKWIFIU_NAME)-$(PKG_RTKWIFIU_VERSION).tar.bz2
+PKG_RTKWIFIU_SOURCE_URL:=file://rtk-dl
+PKG_RTKWIFIU_SUBDIR:=$(PKG_RTKWIFIU_NAME)
+PKG_RTKWIFIU_HASH:=af4c88db9c568601faf7d50b0959dd88435feeb9dedfbf226816bf41f2e045ce
+
+define Download/rtkwifiu
+  PROTO:=lcp
+  VERSION:=$(PKG_RTKWIFIU_VERSION)
+  SUBDIR:=$(PKG_RTKWIFIU_SUBDIR)
+  FILE:=$(PKG_RTKWIFIU_SOURCE)
+  URL:=$(PKG_RTKWIFIU_SOURCE_URL)
+  HASH:=$(PKG_RTKWIFIU_HASH)
+endef
+$(eval $(call Download,rtkwifiu))
+
+define KernelPackage/rtkwifiu/Default
+  VERSION:=$(PKG_RTKWIFIU_VERSION)
+  TITLE:=Realtek Compat Wifi Drivers
+  SUBMENU:=Realtek modules
+  DEPENDS+= +kmod-cfg80211 +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT #+rtwpriv
+endef
+
+define KernelPackage/rtkwifiu
+  $(call KernelPackage/rtkwifiu/Default)
+  FILES:=
+  MENU:=1
+endef
+
+define KernelPackage/rtkwifiu/config
+  if PACKAGE_kmod-rtkwifiu
+        config RTKWIFIU
+		default y
+		 bool
+
+        config RTKWIFIU_CONCURRENT_MODE
+		bool "Enable CONFIG_CONCURRENT_MODE"
+		depends on RTKWIFIU
+		default y
+		help
+		Select this to enable CONFIG_CONCURRENT_MODE.
+  endif
+endef
+
+define KernelPackage/rtkwifiu-rtl8852be
+  $(call KernelPackage/rtkwifiu/Default)
+  DEPENDS+= @PCI_SUPPORT @PACKAGE_kmod-rtkwifiu
+  TITLE+= (RTL8852B PCIe)
+  FILES:=$(RTKWIFIU_DIR)/rtl8852be/8852be.ko
+  AUTOLOAD:=$(call AutoLoad,61,8852be)
+endef
+
+define KernelPackage/rtkwifiu-rtl8822cs
+  $(call KernelPackage/rtkwifiu/Default)
+  DEPENDS+= @PACKAGE_kmod-rtkwifiu
+  TITLE+= (RTL8822C SDIO)
+  FILES:=$(RTKWIFIU_DIR)/rtl8822cs/8822cs.ko
+  AUTOLOAD:=$(call AutoProbe,8822cs)
+endef
+
+define KernelPackage/rtkwifiu-rtl8852bs
+  $(call KernelPackage/rtkwifiu/Default)
+  DEPENDS+= @PACKAGE_kmod-rtkwifiu
+  TITLE+= (RTL8852B SDIO)
+  FILES:=$(RTKWIFIU_DIR)/rtl8852bs/8852bs.ko
+  AUTOLOAD:=$(call AutoProbe,8852bs)
+endef
+
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu),)
+RTKWIFIU_OPTS+=CONFIG_PLATFORM_RTK13XX=$(CONFIG_TARGET_rtd1xxx_rtd1319)
+RTKWIFIU_OPTS+=CONFIG_PLATFORM_RTK1319=$(CONFIG_TARGET_rtd1xxx_rtd1319)
+RTKWIFIU_OPTS+=CONFIG_PLATFORM_RTK16XXB=$(CONFIG_TARGET_rtd1xxx_rtd1619b)
+RTKWIFIU_OPTS+=CONFIG_PLATFORM_I386_PC=
+RTKWIFIU_OPTS+=TopDIR=$(RTKWIFIU_DIR)
+RTKWIFIU_OPTS+=DRV_PATH=$(RTKWIFIU_DIR)/*/
+
+##expr $((5<<16)) + $((10<<8)) + $((110))
+BACKPORTS_LINUX_VERSION_CODE:=330350
+
+USER_EXTRA_CFLAGS:=-DBUILD_OPENWRT -Wno-error=date-time -DBACKPORT_VERSION_CODE=$(BACKPORTS_LINUX_VERSION_CODE) -DUSE_DMA_ALLOCATE
+ifeq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8852be)$(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8852bs),)
+USER_EXTRA_CFLAGS+= -DCONFIG_RTW_HOSTAPD_ACS
+endif
+RTKWIFIU_OPTS+=USER_EXTRA_CFLAGS="$(USER_EXTRA_CFLAGS)"
+endif
+
+define Build/Patch/rtkwifiu
+	$(call PatchDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/common/,rtkwifiu/common/)
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8852be),)
+	$(call PatchDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/rtkwifiu-rtl8852be,rtkwifiu/rtkwifiu-rtl8852be/)
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8822cs),)
+	$(call PatchDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/rtkwifiu-rtl8822cs,rtkwifiu/rtkwifiu-rtl8822cs/)
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8852bs),)
+	$(call PatchDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/rtkwifiu-rtl8852bs,rtkwifiu/rtkwifiu-rtl8852bs/)
+endif
+endef
+
+define Quilt/Refresh/rtkwifiu
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/common/,rtkwifiu/common/)
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8852be),)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/rtkwifiu-rtl8852be,rtkwifiu/rtkwifiu-rtl8852be/)
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8822cs),)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/rtkwifiu-rtl8822cs,rtkwifiu/rtkwifiu-rtl8822cs/)
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rtkwifiu-rtl8852bs),)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),./rtkwifiu/patches/rtkwifiu-rtl8852bs,rtkwifiu/rtkwifiu-rtl8852bs/)
+endif
 endef
