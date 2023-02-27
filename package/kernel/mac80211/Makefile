@@ -442,7 +442,7 @@ endif
 
 MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
 	$(KERNEL_MAKE_FLAGS) \
-ccflags-y="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES) $$(EXTRA_CFLAGS)" \
+	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES) $$(EXTRA_CFLAGS)" \
 	$(RTKWIFIU_OPTS) \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
@@ -464,7 +464,7 @@ define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
 	$(PKG_UNPACK)
-ifneq ($(CPTCFG_RTKWIFIU),)
+ifneq ($(CONFIG_RTKWIFIU),)
 	$(TAR) -C $(PKG_BUILD_DIR)/drivers/net/wireless/realtek -xjf $(DL_DIR)/$(PKG_RTKWIFIU_SOURCE)
 endif
 	$(Build/Patch)
@@ -486,7 +486,7 @@ endif
 		$(PKG_BUILD_DIR)/backport-include/linux/bcm47xx_nvram.h
 
 	echo 'compat-wireless-$(PKG_VERSION)-$(PKG_RELEASE)-$(REVISION)' > $(PKG_BUILD_DIR)/compat_version
-ifneq ($(CPTCFG_RTKWIFIU),)
+ifneq ($(CONFIG_RTKWIFIU),)
 	$(CP) ./rtkwifiu/Makefile.rtkwifi $(RTKWIFIU_DIR)/Makefile
 	$(CP) ./rtkwifiu/Kconfig.rtkwifi $(RTKWIFIU_DIR)/Kconfig
 endif
@@ -521,7 +521,7 @@ define Build/Patch
 ifneq ($(CONFIG_RTKWIFI_COMMON),)
 	$(call PatchDir,$(PKG_BUILD_DIR),./rtkwifi-common/patches,rtkwifi-common/)
 endif
-ifneq ($(CPTCFG_RTKWIFIU),)
+ifneq ($(CONFIG_RTKWIFIU),)
 	$(Build/Patch/rtkwifiu)
 endif
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
@@ -534,32 +534,30 @@ define Quilt/Refresh/Package
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/brcm,brcm/)
-ifneq ($(CONFIG_RTKWIFI_COMMON),)
-	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),./rtkwifi-common/patches,rtkwifi-common/)
-endif
-ifneq ($(CPTCFG_RTKWIFIU),)
 	$(Quilt/Refresh/rtkwifiu)
-endif
 endef
 
 define Build/Compile
 	$(SH_FUNC) var2file "$(call shvar,mac80211_config)" $(PKG_BUILD_DIR)/.config
-ifneq ($(CPTCFG_RTKWIFIU),)
+ifneq ($(CONFIG_RTKWIFIU),)
 	+( \
 	for wifi in $(config-m); do \
-		(cd $(RTKWIFIU_DIR)/`echo $$$${wifi} | tr A-Z a-z` || continue; \
-		sed -i -e 's/\(^[ \t]EXTRA_CFLAGS\|^EXTRA_CFLAGS\)/ccflags-y/g' Makefile `find . -name "*.mk"`; \
-		if [ ! -n "`grep BACKPORT_VERSION_CODE $(BACKPORT_VER_FILES)`" ]; then \
-			sed -i s/LINUX_VERSION_CODE/BACKPORT_VERSION_CODE/g $(BACKPORT_VER_FILES); \
-			sed -i s/LINUX_API_VERSION_CODE/LINUX_VERSION_CODE/g $(RESTORE_LINUX_API_FILES); \
+		(if [ -d "$(RTKWIFIU_DIR)/`echo $$$${wifi} | tr A-Z a-z`" ]; then \
+			cd $(RTKWIFIU_DIR)/`echo $$$${wifi} | tr A-Z a-z` || continue; \
+			sed -i -e 's/\(^[ \t]EXTRA_CFLAGS\|^EXTRA_CFLAGS\)/ccflags-y/g' Makefile `find . -name "*.mk"`; \
+			if [ ! -n "`grep BACKPORT_VERSION_CODE $(BACKPORT_VER_FILES)`" ]; then \
+				sed -i s/LINUX_VERSION_CODE/BACKPORT_VERSION_CODE/g $(BACKPORT_VER_FILES); \
+				sed -i s/LINUX_API_VERSION_CODE/LINUX_VERSION_CODE/g $(RESTORE_LINUX_API_FILES); \
+			fi; \
+			if [ "$(CONFIG_RTKWIFIU_CONCURRENT_MODE)" != "y" ]; then \
+				sed -i -e 's/^ccflags-y += -DCONFIG_CONCURRENT_MODE/#ccflags-y += -DCONFIG_CONCURRENT_MODE/g' Makefile; \
+			else \
+				sed -i -e 's/^#ccflags-y += -DCONFIG_CONCURRENT_MODE/ccflags-y += -DCONFIG_CONCURRENT_MODE/g' Makefile; \
+			fi; \
+			sed -i -e "s/CONFIG_$$$${wifi}/CPTCFG_$$$${wifi}/" Makefile; \
+			sed -i -e 's/CONFIG_PLATFORM_ANDROID = y/CONFIG_PLATFORM_ANDROID = n/g' Makefile;\
 		fi; \
-		if [ "$(CPTCFG_RTKWIFIU_CONCURRENT_MODE)" != "y" ]; then \
-			sed -i -e 's/^ccflags-y += -DCONFIG_CONCURRENT_MODE/#ccflags-y += -DCONFIG_CONCURRENT_MODE/g' Makefile; \
-		else \
-			sed -i -e 's/^#ccflags-y += -DCONFIG_CONCURRENT_MODE/ccflags-y += -DCONFIG_CONCURRENT_MODE/g' Makefile; \
-		fi; \
-		sed -i -e "s/CONFIG_$$$${wifi}/CPTCFG_$$$${wifi}/" Makefile; \
-		sed -i -e 's/CONFIG_PLATFORM_ANDROID = n/CONFIG_PLATFORM_ANDROID = n/g' Makefile;) \
+		) \
 	done \
 	)
 endif
@@ -594,7 +592,7 @@ else
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/ieee80211
 	$(INSTALL_DATA) ./files/mac80211.hotplug $(1)/etc/hotplug.d/ieee80211/10-wifi-detect
 endif
-ifneq ($(CPTCFG_RTKWIFIU),)
+ifneq ($(CONFIG_RTKWIFIU),)
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
 	$(INSTALL_BIN) ./rtkwifiu/files/brlink-notify.hotplug $(1)/etc/hotplug.d/net/20-brlink-notify
 endif
