@@ -1,0 +1,43 @@
+diff -aNr -u4 a/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c
+--- a/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c	2023-02-28 18:37:47.528000000 +0800
++++ b/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c	2023-02-28 18:47:09.584000000 +0800
+@@ -453,22 +453,9 @@
+ 		goto exit;
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0))
+ 	if (started) {
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0))
+-
+-		/* --- cfg80211_ch_switch_started_notfiy() ---
+-		 *  A new parameter, bool quiet, is added from Linux kernel v5.11,
+-		 *  to see if block-tx was requested by the AP. since currently,
+-		 *  the API is used for station before connected in rtw_chk_start_clnt_join()
+-		 *  the quiet is set to false here first. May need to refine it if
+-		 *  called by others with block-tx.
+-		 */
+-
+ 		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0, false);
+-#else
+-		cfg80211_ch_switch_started_notify(adapter->pnetdev, &chdef, 0);
+-#endif
+ 		goto exit;
+ 	}
+ #endif
+ 
+diff -aNr -u4 a/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/wifi_regd.c b/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/wifi_regd.c
+--- a/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/wifi_regd.c	2023-02-28 18:37:47.528000000 +0800
++++ b/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/wifi_regd.c	2023-02-28 18:39:58.604000000 +0800
+@@ -224,13 +224,9 @@
+ 
+ 	if (rtnl_lock_needed)
+ 		rtnl_lock();
+ 
+-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+ 	ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
+-	#else
+-	ret = regulatory_set_wiphy_regd_sync_rtnl(wiphy, regd);
+-	#endif
+ 
+ 	rtw_regd_disable_no_20mhz_chs(wiphy);
+ 
+ 	if (rtnl_lock_needed)
