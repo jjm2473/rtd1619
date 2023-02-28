@@ -67,6 +67,7 @@ sub hash_cmd() {
 
 	$len == 64 and return "$ENV{'MKHASH'} sha256";
 	$len == 32 and return "$ENV{'MKHASH'} md5";
+	$len == 40 and return "sha1sum";
 	return undef;
 }
 
