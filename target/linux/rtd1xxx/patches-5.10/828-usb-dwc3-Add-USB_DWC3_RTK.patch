@@ -1,7 +1,30 @@
 diff -uNr a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
 --- a/drivers/usb/dwc3/core.h	2023-02-28 21:44:23.792000000 +0800
-+++ b/drivers/usb/dwc3/core.h	2023-02-28 21:45:05.764000000 +0800
-@@ -554,6 +554,10 @@
++++ b/drivers/usb/dwc3/core.h	2023-03-01 00:22:45.152000000 +0800
+@@ -200,6 +200,11 @@
+ #define DWC3_EVENTQ		7
+ #define DWC3_AUXEVENTQ		8
+ 
++/* Global TX Threshold Configuration Register */
++#define DWC3_GTXTHRCFG_MAXTXBURSTSIZE(n) (((n) & 0xff) << 16)
++#define DWC3_GTXTHRCFG_TXPKTCNT(n) (((n) & 0xf) << 24)
++#define DWC3_GTXTHRCFG_PKTCNTSEL BIT(29)
++
+ /* Global RX Threshold Configuration Register */
+ #define DWC3_GRXTHRCFG_MAXRXBURSTSIZE(n) (((n) & 0x1f) << 19)
+ #define DWC3_GRXTHRCFG_RXPKTCNT(n) (((n) & 0xf) << 24)
+@@ -253,8 +258,10 @@
+ #define DWC3_GUCTL_HSTINAUTORETRY	BIT(14)
+ 
+ /* Global User Control 1 Register */
++#define DWC3_GUCTL1_PARKMODE_DISABLE_HS	BIT(16)
+ #define DWC3_GUCTL1_PARKMODE_DISABLE_SS	BIT(17)
+ #define DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS	BIT(28)
++#define DWC3_GUCTL1_DEV_FORCE_20_CLK_FOR_30_CLK BIT(26)
+ #define DWC3_GUCTL1_DEV_L1_EXIT_BY_HW	BIT(24)
+ 
+ /* Global Status Register */
+@@ -554,6 +561,10 @@
  #define DWC3_DEV_IMOD_INTERVAL_SHIFT	0
  #define DWC3_DEV_IMOD_INTERVAL_MASK	(0xffff << 0)
  
@@ -12,3 +35,57 @@ diff -uNr a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
  /* OTG Configuration Register */
  #define DWC3_OCFG_DISPWRCUTTOFF		BIT(5)
  #define DWC3_OCFG_HIBDISMASK		BIT(4)
+@@ -1431,6 +1442,7 @@
+ void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode);
+ void dwc3_set_mode(struct dwc3 *dwc, u32 mode);
+ u32 dwc3_core_fifo_space(struct dwc3_ep *dep, u8 type);
++int dwc3_core_soft_reset(struct dwc3 *dwc);
+ 
+ #define DWC3_IP_IS(_ip)							\
+ 	(dwc->ip == _ip##_IP)
+diff -uNr a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
+--- a/drivers/usb/dwc3/gadget.c	2023-03-01 00:12:06.440000000 +0800
++++ b/drivers/usb/dwc3/gadget.c	2023-03-01 00:39:11.020000000 +0800
+@@ -2389,6 +2389,9 @@
+ 	}
+ 
+ 	dwc->gadget_driver	= driver;
++
++	dwc->link_state = 0;
++
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+ 	return 0;
+@@ -2415,6 +2418,7 @@
+ 
+ 	spin_lock_irqsave(&dwc->lock, flags);
+ 	dwc->gadget_driver	= NULL;
++	dwc->link_state = 0;
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+ 	free_irq(dwc->irq_gadget, dwc->ev_buf);
+diff -uNr a/drivers/usb/dwc3/Kconfig b/drivers/usb/dwc3/Kconfig
+--- a/drivers/usb/dwc3/Kconfig	2023-03-01 00:18:50.120000000 +0800
++++ b/drivers/usb/dwc3/Kconfig	2023-03-01 00:25:41.560000000 +0800
+@@ -73,7 +73,7 @@
+ 	  say 'Y' or 'M' if you have such device.
+ 
+ config USB_DWC3_RTK_TYPE_C
+-	bool "RTK DWC3 Type C Driver (dynamical host/device mode switch)"
++	tristate "RTK DWC3 Type C Driver (dynamical host/device mode switch)"
+ 	default USB_DWC3_RTK if (USB_DWC3_DUAL_ROLE)
+ 	depends on USB_DWC3_DUAL_ROLE
+ 	help
+diff -uNr a/drivers/usb/dwc3/Makefile b/drivers/usb/dwc3/Makefile
+--- a/drivers/usb/dwc3/Makefile	2023-03-01 00:19:04.568000000 +0800
++++ b/drivers/usb/dwc3/Makefile	2023-03-01 00:19:31.524000000 +0800
+@@ -51,3 +51,8 @@
+ obj-$(CONFIG_USB_DWC3_OF_SIMPLE)	+= dwc3-of-simple.o
+ obj-$(CONFIG_USB_DWC3_ST)		+= dwc3-st.o
+ obj-$(CONFIG_USB_DWC3_QCOM)		+= dwc3-qcom.o
++obj-$(CONFIG_USB_DWC3_RTK)		+= dwc3-rtk.o
++obj-$(CONFIG_USB_DWC3_RTK)		+= dwc3-rtk-debugfs.o
++obj-$(CONFIG_USB_DWC3_RTK_DUAL_ROLE)	+= dwc3-rtk-drd.o
++obj-$(CONFIG_USB_DWC3_RTK_TYPE_C)	+= dwc3-rtk-type_c.o
++obj-$(CONFIG_USB_TYPE_C_RTK_RTS5400) += rtk-rts5400.o
+\ 文件尾没有换行符
