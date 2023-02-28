@@ -1,9 +1,9 @@
 diff -uNr a/drivers/nvmem/Makefile b/drivers/nvmem/Makefile
 --- a/drivers/nvmem/Makefile	2023-02-28 16:52:48.764000000 +0800
 +++ b/drivers/nvmem/Makefile	2023-02-28 16:53:27.684000000 +0800
-@@ -57,3 +57,5 @@
+@@ -57,3 +57,3 @@
  nvmem_sprd_efuse-y		:= sprd-efuse.o
- obj-$(CONFIG_NVMEM_U_BOOT_ENV)	+= nvmem_u-boot-env.o
- nvmem_u-boot-env-y		:= u-boot-env.o
+-obj-$(CONFIG_NVMEM_U_BOOT_ENV)	+= nvmem_u-boot-env.o
+-nvmem_u-boot-env-y		:= u-boot-env.o
 +obj-$(CONFIG_RTK_EFUSE)         += nvmem_rtk-efuse.o
 +nvmem_rtk-efuse-y              := rtk-efuse.o

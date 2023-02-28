@@ -23,6 +23,6 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=Image dtbs
 
-DEFAULT_PACKAGES +=e2fsprogs ethtool mkf2fs rtk-imagefile kmod-rtl8152 kmod-rtl8125 kmod-rtk-tee
+DEFAULT_PACKAGES +=e2fsprogs ethtool mkf2fs
 
 $(eval $(call BuildTarget))

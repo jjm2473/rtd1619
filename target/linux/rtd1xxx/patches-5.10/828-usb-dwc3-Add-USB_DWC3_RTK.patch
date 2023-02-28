@@ -1,6 +1,118 @@
+diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+--- a/drivers/usb/dwc3/core.c	2023-03-01 02:55:34.188000000 +0800
++++ b/drivers/usb/dwc3/core.c	2023-03-01 03:15:15.144000000 +0800
+@@ -318,6 +318,23 @@
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(dwc3_core_soft_reset);
++EXPORT_SYMBOL(dwc3_set_prtcap);
++
++#if (IS_ENABLED(CONFIG_USB_DWC3_HOST) | (IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)))
++EXPORT_SYMBOL(dwc3_host_init);
++EXPORT_SYMBOL(dwc3_host_exit);
++#endif
++
++#if (IS_ENABLED(CONFIG_USB_DWC3_GADGET) | (IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)))
++EXPORT_SYMBOL(dwc3_gadget_init);
++EXPORT_SYMBOL(dwc3_gadget_exit);
++#endif
++
++EXPORT_SYMBOL(__traceiter_dwc3_writel);
++EXPORT_SYMBOL(__traceiter_dwc3_readl);
++EXPORT_SYMBOL(__tracepoint_dwc3_writel);
++EXPORT_SYMBOL(__tracepoint_dwc3_readl);
+ 
+ /*
+  * dwc3_frame_length_adjustment - Adjusts frame length if required
+@@ -977,6 +994,9 @@
+ 		dwc->phys_ready = true;
+ 	}
+ 
++	reg = dwc3_readl(dwc->regs, DWC3_GCTL);
++	dwc3_writel(dwc->regs, DWC3_GCTL, reg | DWC3_GCTL_DSBLCLKGTNG);
++
+ 	usb_phy_init(dwc->usb2_phy);
+ 	usb_phy_init(dwc->usb3_phy);
+ 	ret = phy_init(dwc->usb2_generic_phy);
+@@ -993,6 +1013,8 @@
+ 	if (ret)
+ 		goto err1;
+ 
++	dwc3_writel(dwc->regs, DWC3_GCTL, reg);
++
+ 	if (hw_mode == DWC3_GHWPARAMS0_MODE_DRD &&
+ 	    !DWC3_VER_IS_WITHIN(DWC3, ANY, 194A)) {
+ 		if (!dwc->dis_u3_susphy_quirk) {
+@@ -1036,6 +1058,21 @@
+ 		goto err4;
+ 	}
+ 
++	switch (dwc->dr_mode) {
++	case USB_DR_MODE_PERIPHERAL:
++		dwc3_set_prtcap(dwc, DWC3_GCTL_PRTCAP_DEVICE);
++		break;
++	case USB_DR_MODE_HOST:
++		dwc3_set_prtcap(dwc, DWC3_GCTL_PRTCAP_HOST);
++		break;
++	case USB_DR_MODE_OTG:
++		dwc3_set_prtcap(dwc, DWC3_GCTL_PRTCAP_OTG);
++		break;
++	default:
++		dev_warn(dwc->dev, "Unsupported mode %d\n", dwc->dr_mode);
++		break;
++	}
++
+ 	/*
+ 	 * ENDXFER polling is available on version 3.10a and later of
+ 	 * the DWC_usb3 controller. It is NOT available in the
+@@ -1060,6 +1097,12 @@
+ 		if (dwc->dis_tx_ipgap_linecheck_quirk)
+ 			reg |= DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS;
+ 
++		if (dwc->dev_force_20_clk_for_30_clk)
++			reg |= DWC3_GUCTL1_DEV_FORCE_20_CLK_FOR_30_CLK;
++
++		if (dwc->parkmode_disable_hs_quirk)
++			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_HS;
++
+ 		if (dwc->parkmode_disable_ss_quirk)
+ 			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_SS;
+ 
+@@ -1376,6 +1419,10 @@
+ 				"snps,dis-u2-freeclk-exists-quirk");
+ 	dwc->dis_del_phy_power_chg_quirk = device_property_read_bool(dev,
+ 				"snps,dis-del-phy-power-chg-quirk");
++	dwc->dev_force_20_clk_for_30_clk = device_property_read_bool(dev,
++				"snps,dev_force_20_clk_for_30_clk");
++	dwc->parkmode_disable_hs_quirk = device_property_read_bool(dev,
++				"snps,parkmode-disable-hs-quirk");
+ 	dwc->dis_tx_ipgap_linecheck_quirk = device_property_read_bool(dev,
+ 				"snps,dis-tx-ipgap-linecheck-quirk");
+ 	dwc->parkmode_disable_ss_quirk = device_property_read_bool(dev,
+@@ -1519,6 +1566,19 @@
+ 	dwc_res = *res;
+ 	dwc_res.start += DWC3_GLOBALS_REGS_START;
+ 
++	/* For some dwc3 controller, the dwc3 global register start address is
++	 * not at DWC3_GLOBALS_REGS_START (0xc100).
++	 */
++	device_property_read_u32(dev, "snps,fixed_dwc3_globals_regs_start",
++				 &dwc->fixed_dwc3_globals_regs_start);
++	if (dwc->fixed_dwc3_globals_regs_start) {
++		dwc_res.start -= DWC3_GLOBALS_REGS_START;
++		dwc_res.start += dwc->fixed_dwc3_globals_regs_start;
++		dev_info(dev,
++		    "fixed dwc3 globals register start address from 0x%x to end 0x%x\n",
++		    (int)dwc_res.start, (int)dwc_res.end);
++	}
++
+ 	regs = devm_ioremap_resource(dev, &dwc_res);
+ 	if (IS_ERR(regs))
+ 		return PTR_ERR(regs);
 diff -uNr a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
 --- a/drivers/usb/dwc3/core.h	2023-02-28 21:44:23.792000000 +0800
-+++ b/drivers/usb/dwc3/core.h	2023-03-01 00:22:45.152000000 +0800
++++ b/drivers/usb/dwc3/core.h	2023-03-01 03:08:20.628000000 +0800
 @@ -200,6 +200,11 @@
  #define DWC3_EVENTQ		7
  #define DWC3_AUXEVENTQ		8
@@ -35,7 +147,24 @@ diff -uNr a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
  /* OTG Configuration Register */
  #define DWC3_OCFG_DISPWRCUTTOFF		BIT(5)
  #define DWC3_OCFG_HIBDISMASK		BIT(4)
-@@ -1431,6 +1442,7 @@
+@@ -1254,6 +1265,8 @@
+ 	unsigned		dis_u2_freeclk_exists_quirk:1;
+ 	unsigned		dis_del_phy_power_chg_quirk:1;
+ 	unsigned		dis_tx_ipgap_linecheck_quirk:1;
++	unsigned		dev_force_20_clk_for_30_clk:1;
++	unsigned		parkmode_disable_hs_quirk:1;
+ 	unsigned		parkmode_disable_ss_quirk:1;
+ 
+ 	unsigned		tx_de_emphasis_quirk:1;
+@@ -1264,6 +1277,7 @@
+ 	unsigned		dis_split_quirk:1;
+ 
+ 	u16			imod_interval;
++	u32			fixed_dwc3_globals_regs_start;
+ };
+ 
+ #define INCRX_BURST_MODE 0
+@@ -1431,6 +1445,7 @@
  void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode);
  void dwc3_set_mode(struct dwc3 *dwc, u32 mode);
  u32 dwc3_core_fifo_space(struct dwc3_ep *dep, u8 type);
@@ -45,7 +174,7 @@ diff -uNr a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
  	(dwc->ip == _ip##_IP)
 diff -uNr a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
 --- a/drivers/usb/dwc3/gadget.c	2023-03-01 00:12:06.440000000 +0800
-+++ b/drivers/usb/dwc3/gadget.c	2023-03-01 00:39:11.020000000 +0800
++++ b/drivers/usb/dwc3/gadget.c	2023-03-01 03:10:41.748000000 +0800
 @@ -2389,6 +2389,9 @@
  	}
  
@@ -64,6 +193,23 @@ diff -uNr a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
  	spin_unlock_irqrestore(&dwc->lock, flags);
  
  	free_irq(dwc->irq_gadget, dwc->ev_buf);
+@@ -4033,6 +4037,7 @@
+ 		return;
+ 
+ 	usb_del_gadget(dwc->gadget);
++	dwc->gadget->udc = NULL;
+ 	dwc3_gadget_free_endpoints(dwc);
+ 	usb_put_gadget(dwc->gadget);
+ 	dma_free_coherent(dwc->sysdev, DWC3_BOUNCE_SIZE, dwc->bounce,
+@@ -4040,6 +4045,8 @@
+ 	kfree(dwc->setup_buf);
+ 	dma_free_coherent(dwc->sysdev, sizeof(*dwc->ep0_trb) * 2,
+ 			  dwc->ep0_trb, dwc->ep0_trb_addr);
++
++	dwc->gadget = NULL;
+ }
+ 
+ int dwc3_gadget_suspend(struct dwc3 *dwc)
 diff -uNr a/drivers/usb/dwc3/Kconfig b/drivers/usb/dwc3/Kconfig
 --- a/drivers/usb/dwc3/Kconfig	2023-03-01 00:18:50.120000000 +0800
 +++ b/drivers/usb/dwc3/Kconfig	2023-03-01 00:25:41.560000000 +0800
