@@ -1,7 +1,7 @@
 diff -aNr -u4 a/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c
 --- a/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c	2023-02-28 18:37:47.528000000 +0800
 +++ b/drivers/net/wireless/realtek/rtkwifiu/rtl8822cs/os_dep/linux/ioctl_cfg80211.c	2023-02-28 18:47:09.584000000 +0800
-@@ -453,22 +453,9 @@
+@@ -490,22 +490,9 @@
  		goto exit;
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0))
