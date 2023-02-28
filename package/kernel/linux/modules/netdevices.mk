@@ -138,6 +138,23 @@ endef
 $(eval $(call KernelPackage,mii))
 
 
+define KernelPackage/mdio-devres
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Supports MDIO device registration
+  DEPENDS:=@LINUX_5_10 +kmod-libphy PACKAGE_kmod-of-mdio:kmod-of-mdio
+  KCONFIG:=CONFIG_MDIO_DEVRES
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
+  AUTOLOAD:=$(call AutoProbe,mdio-devres)
+endef
+
+define KernelPackage/mdio-devres/description
+ Supports MDIO device registration
+endef
+
+$(eval $(call KernelPackage,mdio-devres))
+
+
 define KernelPackage/mdio-gpio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:= Supports GPIO lib-based MDIO busses
@@ -146,8 +163,10 @@ define KernelPackage/mdio-gpio
 	CONFIG_MDIO_BITBANG \
 	CONFIG_MDIO_GPIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko
+	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-gpio.ko@ge5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-bitbang.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,mdio-gpio)
 endef
 
@@ -177,6 +196,21 @@ endef
 
 $(eval $(call KernelPackage,et131x))
 
+define KernelPackage/phy-microchip
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Microchip Ethernet PHY driver
+   KCONFIG:=CONFIG_MICROCHIP_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/microchip.ko
+   AUTOLOAD:=$(call AutoLoad,18,microchip,1)
+endef
+
+define KernelPackage/phy-microchip/description
+   Supports the LAN88XX PHYs.
+endef
+
+$(eval $(call KernelPackage,phy-microchip))
+
 
 define KernelPackage/phylib-broadcom
    SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -189,6 +223,23 @@ define KernelPackage/phylib-broadcom
 endef
 
 $(eval $(call KernelPackage,phylib-broadcom))
+
+
+define KernelPackage/phy-ax88796b
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Asix PHY driver
+   KCONFIG:=CONFIG_AX88796B_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b.ko
+   AUTOLOAD:=$(call AutoProbe,ax88796b)
+endef
+
+define KernelPackage/phy-ax88796b/description
+   Currently supports the Asix Electronics PHY found in the X-Surf 100
+   AX88796B package.
+endef
+
+$(eval $(call KernelPackage,phy-ax88796b))
 
 
 define KernelPackage/phy-broadcom
@@ -224,6 +275,40 @@ endef
 $(eval $(call KernelPackage,phy-bcm84881))
 
 
+define KernelPackage/phy-marvell
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Marvell Gigabit Ethernet PHY driver
+   KCONFIG:=CONFIG_MARVELL_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/marvell.ko
+   AUTOLOAD:=$(call AutoLoad,18,marvell)
+endef
+
+define KernelPackage/phy-marvell/description
+   Supports Marvell Gigabit Ethernet PHYs:
+   * 88E1101
+   * 88E1112
+   * 88E1111 (incl. Finisar variant)
+   * 88E1118
+   * 88E1121R
+   * 88E1145
+   * 88E1149R
+   * 88E1240
+   * 88E1318S
+   * 88E1116R
+   * 88E1510
+   * 88E1540
+   * 88E1545
+   * 88E3016
+   * 88E6341 family
+   * 88E6390 family
+   * 88E6393 family
+   * 88E1340S
+   * 88E1548P
+endef
+
+$(eval $(call KernelPackage,phy-marvell))
+
 
 define KernelPackage/phy-realtek
    SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -239,6 +324,22 @@ define KernelPackage/phy-realtek/description
 endef
 
 $(eval $(call KernelPackage,phy-realtek))
+
+
+define KernelPackage/phy-smsc
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=SMSC PHY driver
+   KCONFIG:=CONFIG_SMSC_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/smsc.ko
+   AUTOLOAD:=$(call AutoProbe,smsc)
+endef
+
+define KernelPackage/phy-smsc/description
+   Currently supports the LAN83C185, LAN8187 and LAN8700 PHYs
+endef
+
+$(eval $(call KernelPackage,phy-smsc))
 
 
 define KernelPackage/swconfig
@@ -543,8 +644,9 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek
-  KCONFIG:=CONFIG_R8169 \
+  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +LINUX_5_10:kmod-mdio-devres
+  KCONFIG:= \
+    CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
@@ -637,7 +739,7 @@ define KernelPackage/igb
     CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
-  AUTOLOAD:=$(call AutoLoad,35,igb)
+  AUTOLOAD:=$(call AutoLoad,35,igb,1)
 endef
 
 define KernelPackage/igb/description
@@ -668,7 +770,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +LINUX_5_10:kmod-mdio-devres
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
@@ -865,6 +967,22 @@ endef
 $(eval $(call KernelPackage,macvlan))
 
 
+define KernelPackage/ipvlan
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=IP-VLAN support
+  KCONFIG:=CONFIG_IPVLAN
+  FILES:=$(LINUX_DIR)/drivers/net/ipvlan/ipvlan.ko
+  AUTOLOAD:=$(call AutoProbe,ipvlan)
+endef
+
+define KernelPackage/ipvlan/description
+ A kernel module which allows one to create virtual interfaces that
+ map packets to or from specific IP addresses to a particular interface
+endef
+
+$(eval $(call KernelPackage,ipvlan))
+
+
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
   DEPENDS:=@PCI_SUPPORT +kmod-mii
@@ -983,14 +1101,30 @@ endef
 
 $(eval $(call KernelPackage,forcedeth))
 
+define KernelPackage/fixed-phy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MDIO Bus/PHY emulation with fixed speed/link PHYs
+  DEPENDS:=+kmod-libphy
+  KCONFIG:=CONFIG_FIXED_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko
+  AUTOLOAD:=$(call AutoProbe,fixed_phy)
+endef
+
+define KernelPackage/fixed-phy/description
+ Kernel driver for "fixed" MDIO Bus to cover the boards
+ and devices that use PHYs that are not connected to the real MDIO bus.
+endef
+
+$(eval $(call KernelPackage,fixed-phy))
+
 define KernelPackage/of-mdio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=OpenFirmware MDIO support
-  DEPENDS:=+kmod-libphy
+  DEPENDS:=+kmod-libphy +kmod-fixed-phy @!TARGET_x86
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
-	$(LINUX_DIR)/drivers/of/of_mdio.ko
+	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef
 
@@ -1156,6 +1290,26 @@ endef
 $(eval $(call KernelPackage,mlx5-core))
 
 
+define KernelPackage/qlcnic
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core
+  TITLE:=QLogic QLE8240 and QLE8242 device support
+  KCONFIG:= \
+	CONFIG_QLCNIC \
+	CONFIG_QLCNIC_HWMON=y \
+	CONFIG_QLCNIC_SRIOV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
+  AUTOLOAD:=$(call AutoProbe,qlcnic)
+endef
+
+define KernelPackage/qlcnic/description
+  This driver supports QLogic QLE8240 and QLE8242 Converged Ethernet
+  devices.
+endef
+
+$(eval $(call KernelPackage,qlcnic))
+
+
 define KernelPackage/sfp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SFP cage support
@@ -1165,7 +1319,8 @@ define KernelPackage/sfp
 	CONFIG_MDIO_I2C
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/sfp.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko
+	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-i2c.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,mdio-i2c sfp)
 endef
 
@@ -1178,7 +1333,7 @@ $(eval $(call KernelPackage,sfp))
 define KernelPackage/igc
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller I225 Series support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp
   KCONFIG:=CONFIG_IGC
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igc/igc.ko
   AUTOLOAD:=$(call AutoProbe,igc)

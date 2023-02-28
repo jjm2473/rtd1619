@@ -211,3 +211,4 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 +		.me             = THIS_MODULE,
  	}
  };
+ 

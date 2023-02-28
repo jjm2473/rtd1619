@@ -1,8 +1,21 @@
+Package/r8152-firmware = $(call Package/firmware-default,RealTek RTL8152 firmware)
+define Package/r8152-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtl_nic
+	$(CP) \
+		$(PKG_BUILD_DIR)/rtl_nic/rtl8153* \
+		$(PKG_BUILD_DIR)/rtl_nic/rtl8156* \
+		$(1)/lib/firmware/rtl_nic
+endef
+$(eval $(call BuildPackage,r8152-firmware))
+
 Package/r8169-firmware = $(call Package/firmware-default,RealTek RTL8169 firmware)
 define Package/r8169-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtl_nic
 	$(CP) \
-		$(PKG_BUILD_DIR)/rtl_nic/* \
+		$(PKG_BUILD_DIR)/rtl_nic/rtl810* \
+		$(PKG_BUILD_DIR)/rtl_nic/rtl8125* \
+		$(PKG_BUILD_DIR)/rtl_nic/rtl8168* \
+		$(PKG_BUILD_DIR)/rtl_nic/rtl84* \
 		$(1)/lib/firmware/rtl_nic
 endef
 $(eval $(call BuildPackage,r8169-firmware))
@@ -55,13 +68,6 @@ define Package/rtl8192se-firmware/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtlwifi/rtl8192sefw.bin $(1)/lib/firmware/rtlwifi
 endef
 $(eval $(call BuildPackage,rtl8192se-firmware))
-
-Package/rtl8192su-firmware = $(call Package/firmware-default,RealTek RTL8192SU firmware)
-define Package/rtl8192su-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtlwifi/rtl8712u.bin $(1)/lib/firmware/rtlwifi
-endef
-$(eval $(call BuildPackage,rtl8192su-firmware))
 
 Package/rtl8723au-firmware = $(call Package/firmware-default,RealTek RTL8723AU firmware)
 define Package/rtl8723au-firmware/install

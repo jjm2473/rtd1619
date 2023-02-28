@@ -1,3 +1,11 @@
+define Device/globalscale_mochabin
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Globalscale
+  DEVICE_MODEL := MOCHAbin
+  SOC := armada-7040
+endef
+TARGET_DEVICES += globalscale_mochabin
+
 define Device/marvell_armada7040-db
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Marvell
@@ -49,7 +57,6 @@ define Device/iei_puzzle-m901
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M901
   SOC := cn9131
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
 TARGET_DEVICES += iei_puzzle-m901
 
@@ -58,6 +65,5 @@ define Device/iei_puzzle-m902
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M902
   SOC := cn9132
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
 TARGET_DEVICES += iei_puzzle-m902

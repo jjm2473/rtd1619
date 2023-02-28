@@ -209,7 +209,7 @@ config PACKAGE_B43_USE_BCMA
 		default "16,28,29,30" if TARGET_bcm47xx_mips74k
 		default "5,6,7,8,9,10,11,13,15,16,28,29,30"
 		help
-		  This is a comma seperated list of core revision numbers.
+		  This is a comma separated list of core revision numbers.
 
 		  Example (keep files for rev5 only):
 		    5
@@ -224,7 +224,7 @@ config PACKAGE_B43_USE_BCMA
 		default "N,HT" if TARGET_bcm47xx_mips74k
 		default "G,N,LP,HT"
 		help
-		  This is a comma seperated list of PHY types:
+		  This is a comma separated list of PHY types:
 		    A  => A-PHY
 		    AG => Dual A-PHY G-PHY
 		    G  => G-PHY
@@ -401,7 +401,7 @@ define KernelPackage/brcmsmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_bcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil +!BRCMSMAC_USE_FW_FROM_WL:brcmsmac-firmware
+  DEPENDS+=@!TARGET_bcm47xx_legacy +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_bcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil +!BRCMSMAC_USE_FW_FROM_WL:brcmsmac-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmsmac/brcmsmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmsmac)
   MENU:=1

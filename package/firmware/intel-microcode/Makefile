@@ -12,7 +12,7 @@ PKG_VERSION:=20220809
 PKG_RELEASE:=1
 
 PKG_SOURCE:=intel-microcode_3.$(PKG_VERSION).1.tar.xz
-PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/non-free/i/intel-microcode/
+PKG_SOURCE_URL:=@DEBIAN/pool/non-free/i/intel-microcode/
 PKG_HASH:=4cf6c3638bb52d9d45c1916af866fd0929628a6f459daac3edfd369149e9c665
 PKG_BUILD_DIR:=$(BUILD_DIR)/intel-microcode-3.$(PKG_VERSION).1
 

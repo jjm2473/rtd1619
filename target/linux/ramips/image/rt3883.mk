@@ -32,12 +32,10 @@ endef
 TARGET_DEVICES += belkin_f9k1109v1
 
 define Device/dlink_dir-645
-  $(Device/seama)
-  $(Device/uimage-lzma-loader)
+  $(Device/seama-lzma-loader)
   SOC := rt3662
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7872k
-  KERNEL := kernel-bin | append-dtb | lzma -d10
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645
@@ -52,7 +50,7 @@ define Device/edimax_br-6475nd
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN54 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size
+	check-size | append-metadata
   DEVICE_VENDOR := Edimax
   DEVICE_MODEL := BR-6475nD
   SUPPORTED_DEVICES += br-6475nd
@@ -97,7 +95,6 @@ TARGET_DEVICES += omnima_hpm
 define Device/samsung_cy-swr1100
   $(Device/seama)
   SOC := rt3662
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   KERNEL := $(KERNEL_DTB)
   SEAMA_SIGNATURE := wrgnd10_samsung_ss815

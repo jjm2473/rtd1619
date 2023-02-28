@@ -1,5 +1,4 @@
-src-git-full packages https://gitee.com/gbb113/packages.git;openwrt-21.02
-src-git-full luci https://gitee.com/gbb113/luci.git;openwrt-21.02
-src-git-full routing https://gitee.com/gbb113/routing.git;openwrt-21.02
-src-git-full telephony https://gitee.com/gbb113/telephony.git;openwrt-21.02
-#src-link custom /usr/src/openwrt/custom-feed
+src-git-full packages https://gitee.com/gbb113/packages.git;openwrt-22.03
+src-git-full luci https://gitee.com/gbb113/luci.git;openwrt-22.03
+src-git-full routing https://gitee.com/gbb113/routing.git;openwrt-22.03
+src-git-full telephony https://gitee.com/gbb113/telephony.git;openwrt-22.03

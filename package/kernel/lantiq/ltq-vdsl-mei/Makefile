@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9-mei
 PKG_VERSION:=1.5.17.6
-PKG_RELEASE:=4
+PKG_RELEASE:=6
 
 PKG_BASE_NAME:=drv_mei_cpe
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
@@ -21,6 +21,7 @@ PKG_FLAGS:=nonshared
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0 BSD-2-Clause
 PKG_LICENSE_FILES:=LICENSE
+PKG_EXTMOD_SUBDIRS:=src
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,7 +29,7 @@ define KernelPackage/ltq-vdsl-vr9-mei
   TITLE:=mei driver for vdsl
   SECTION:=sys
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-ifxos
+  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-ifxos +kmod-ltq-vectoring
   FILES:=$(PKG_BUILD_DIR)/src/drv_mei_cpe.ko
   AUTOLOAD:=$(call AutoLoad,50,drv_mei_cpe)
 endef
@@ -52,7 +53,17 @@ define Package/ltq-vdsl-mei-test/description
 endef
 
 MAKE_FLAGS += \
+	$(KERNEL_MAKE_FLAGS) \
 	SHELL="$(BASH)"
+
+# ltq-vdsl-app uses a header provided by the MEI driver which has some
+# conditionals.
+# Define the conditionals here to have the same view on both sides. If you
+# change them, you need to change them for the ltq-vdsl-app as well
+MEI_DRV_CFLAGS = \
+	-DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1 \
+	-DMEI_SUPPORT_DEBUG_STREAMS=1 \
+	-DMEI_SUPPORT_OPTIMIZED_FW_DL=1
 
 CONFIGURE_ARGS += \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
@@ -63,7 +74,7 @@ CONFIGURE_ARGS += \
 	--enable-error_print \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos/" \
 	--enable-ifxos-library="-L$(STAGING_DIR)/usr/lib" \
-	--enable-add_drv_cflags="-DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1" \
+	--enable-add_drv_cflags="$(MEI_DRV_CFLAGS)" \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-drv_test_appl=yes \
