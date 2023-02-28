@@ -1,7 +1,7 @@
 diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
 --- a/drivers/usb/dwc3/core.c	2023-03-01 02:55:34.188000000 +0800
-+++ b/drivers/usb/dwc3/core.c	2023-03-01 03:15:15.144000000 +0800
-@@ -318,6 +318,23 @@
++++ b/drivers/usb/dwc3/core.c	2023-03-01 03:22:15.080000000 +0800
+@@ -318,6 +318,19 @@
  
  	return 0;
  }
@@ -18,14 +18,10 @@ diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
 +EXPORT_SYMBOL(dwc3_gadget_exit);
 +#endif
 +
-+EXPORT_SYMBOL(__traceiter_dwc3_writel);
-+EXPORT_SYMBOL(__traceiter_dwc3_readl);
-+EXPORT_SYMBOL(__tracepoint_dwc3_writel);
-+EXPORT_SYMBOL(__tracepoint_dwc3_readl);
  
  /*
   * dwc3_frame_length_adjustment - Adjusts frame length if required
-@@ -977,6 +994,9 @@
+@@ -977,6 +990,9 @@
  		dwc->phys_ready = true;
  	}
  
@@ -35,7 +31,7 @@ diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
  	usb_phy_init(dwc->usb2_phy);
  	usb_phy_init(dwc->usb3_phy);
  	ret = phy_init(dwc->usb2_generic_phy);
-@@ -993,6 +1013,8 @@
+@@ -993,6 +1009,8 @@
  	if (ret)
  		goto err1;
  
@@ -44,7 +40,7 @@ diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
  	if (hw_mode == DWC3_GHWPARAMS0_MODE_DRD &&
  	    !DWC3_VER_IS_WITHIN(DWC3, ANY, 194A)) {
  		if (!dwc->dis_u3_susphy_quirk) {
-@@ -1036,6 +1058,21 @@
+@@ -1036,6 +1054,21 @@
  		goto err4;
  	}
  
@@ -66,7 +62,7 @@ diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
  	/*
  	 * ENDXFER polling is available on version 3.10a and later of
  	 * the DWC_usb3 controller. It is NOT available in the
-@@ -1060,6 +1097,12 @@
+@@ -1060,6 +1093,12 @@
  		if (dwc->dis_tx_ipgap_linecheck_quirk)
  			reg |= DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS;
  
@@ -79,7 +75,7 @@ diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
  		if (dwc->parkmode_disable_ss_quirk)
  			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_SS;
  
-@@ -1376,6 +1419,10 @@
+@@ -1376,6 +1415,10 @@
  				"snps,dis-u2-freeclk-exists-quirk");
  	dwc->dis_del_phy_power_chg_quirk = device_property_read_bool(dev,
  				"snps,dis-del-phy-power-chg-quirk");
@@ -90,7 +86,7 @@ diff -uNr a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
  	dwc->dis_tx_ipgap_linecheck_quirk = device_property_read_bool(dev,
  				"snps,dis-tx-ipgap-linecheck-quirk");
  	dwc->parkmode_disable_ss_quirk = device_property_read_bool(dev,
-@@ -1519,6 +1566,19 @@
+@@ -1519,6 +1562,19 @@
  	dwc_res = *res;
  	dwc_res.start += DWC3_GLOBALS_REGS_START;
  
