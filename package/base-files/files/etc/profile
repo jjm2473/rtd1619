@@ -13,6 +13,7 @@ export HOME=$(grep -e "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
 export HOME=${HOME:-/root}
 export PS1='\u@\h:\w\$ '
 export ENV=/etc/shinit
+export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
 
 case "$TERM" in
 	xterm*|rxvt*)

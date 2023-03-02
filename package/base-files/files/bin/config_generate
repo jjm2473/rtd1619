@@ -299,10 +299,12 @@ generate_switch() {
 }
 
 generate_static_system() {
+	local kernel_hostname
+	kernel_hostname=`cat /proc/sys/kernel/hostname`
 	uci -q batch <<-EOF
 		delete system.@system[0]
 		add system system
-		set system.@system[-1].hostname='OpenWrt'
+		set system.@system[-1].hostname='$kernel_hostname'
 		set system.@system[-1].timezone='UTC'
 		set system.@system[-1].ttylogin='0'
 		set system.@system[-1].log_size='64'
