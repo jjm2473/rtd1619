@@ -1,4 +1,5 @@
 #!/bin/sh
+
 . /lib/netifd/mac80211.sh
 . /lib/netifd/rtkwifiu.sh
 

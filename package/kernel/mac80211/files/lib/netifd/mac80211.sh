@@ -1,4 +1,3 @@
-
 mac80211_phy_to_path() {
 	local phy="$1"
 
@@ -35,5 +34,3 @@ mac80211_path_to_phy() {
 		esac
 	done
 }
-
-
