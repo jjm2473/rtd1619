@@ -30,6 +30,6 @@ fdt-utils flock iwinfo lscpu lsof mount-utils \
 usbutils usbids \
 kmod-fs-ext4 \
 kmod-fs-f2fs \
-hostapd
+hostapd-common
 
 $(eval $(call BuildTarget))
