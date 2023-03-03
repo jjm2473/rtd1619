@@ -30,3 +30,5 @@ git-src
 .cproject
 .ccache
 .vscode
+/target/linux/rtd1xxx/image/rtk-imagefile*
+/target/linux/rtd1xxx/image/offline*

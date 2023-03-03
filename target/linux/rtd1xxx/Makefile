@@ -23,13 +23,14 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=Image dtbs
 
-DEFAULT_PACKAGES += e2fsprogs ethtool mkf2fs uboot-envtools parted rtk-bluecore curl etherwake ethtool iperf3 netperf \
+DEFAULT_PACKAGES += e2fsprogs ethtool mkf2fs uboot-envtools parted rtk-bluecore curl etherwake ethtool netperf \
 blkid blkdev fio hdparm \
 keyutils resize2fs swap-utils tune2fs \
 fdt-utils flock iwinfo lscpu lsof mount-utils \
 usbutils usbids \
 kmod-fs-ext4 \
 kmod-fs-f2fs \
-hostapd-common
+jshn
+
 
 $(eval $(call BuildTarget))
