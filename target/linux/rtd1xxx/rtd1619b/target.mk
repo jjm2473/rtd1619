@@ -9,5 +9,3 @@ BOARDNAME:=Realtek RTD1619b Based Boards
 define Target/Description
 	Build NAS firmware image for Realtek RTD1619B SoC boards.
 endef
-
-DEFAULT_PACKAGES += kmod-rtl8125 kmod-rtl8152 kmod-rtkwifiu kmod-rtkwifiu-rtl8822cs

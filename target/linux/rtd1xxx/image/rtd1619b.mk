@@ -41,17 +41,48 @@ endef
 
 TARGET_DEVICES += bleedingedge-emmc-2gb
 
+# 加入 路由器需要的 依赖包.
+DEFAULT_PACKAGES.rt1619b_with = \
+kmod-rtl8125 kmod-rtl8152 kmod-rtkwifiu kmod-rtkwifiu-rtl8822cs kmod-rtkwifiu-rtl8852bs \
+ethtool rtk-bluecore curl etherwake netperf \
+blkid blkdev fio hdparm \
+keyutils resize2fs swap-utils tune2fs \
+fdt-utils flock iwinfo lscpu lsof mount-utils \
+usbutils usbids \
+kmod-fs-ext4 \
+kmod-fs-f2fs \
+logrotate \
+jshn \
+netdata \
+hostapd-utils hostapd-common wpa-cli wpad-mesh-openssl \
+luci
+
 define Device/bleedingedge-emmc-2gb-router
   $(Device/bleedingedge-emmc)
   DEVICE_MODEL += for Router
-  DEVICE_PACKAGES += $(DEFAULT_PACKAGES.router)
+  DEVICE_PACKAGES += $(DEFAULT_PACKAGES.router) $(DEFAULT_PACKAGES.rt1619b_with)
   DEVICE_VARIANT := 2GB
   CLEAR_OVERLAY := n
+  KCONFIG:= \
+  CONFIG_DRIVER_11AX_SUPPORT=y
+
   SUPPORTED_DEVICES := realtek,bleeding-edge-emmc-router
   IMAGE/install.img := rtkimg | append-metadata
 endef
 
 TARGET_DEVICES += bleedingedge-emmc-2gb-router
+
+# 加入 docker 依赖包.
+DEFAULT_PACKAGES.rt1619b_with_docker = docker-compose dockerd docker luci-app-dockerman kmod-rtk-docker rtktranscode 
+
+define Device/bleedingedge-emmc-2gb-router-with-docker
+  $(Device/bleedingedge-emmc-2gb-router)
+  DEVICE_DTS := rtd1619b-bleedingedge-emmc-2gb-router rtd1619b-rescue
+  DEVICE_MODEL += for Router(Docker)
+  DEVICE_PACKAGES += $(DEFAULT_PACKAGES.rt1619b_with_docker)
+endef
+
+TARGET_DEVICES += bleedingedge-emmc-2gb-router-with-docker
 
 define Device/bleedingedge-spi
   $(Device/rtd1619b)
