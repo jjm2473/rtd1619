@@ -30,7 +30,10 @@ fdt-utils flock iwinfo lscpu lsof mount-utils \
 usbutils usbids \
 kmod-fs-ext4 \
 kmod-fs-f2fs \
-jshn
+logrotate \
+jshn \
+netdata \
+hostapd-utils hostapd-common wpa-cli wpad-mesh-openssl
 
 
 $(eval $(call BuildTarget))

@@ -1,4 +1,6 @@
 # Put your custom commands here that should be executed once
 # the system init finished. By default this file does nothing.
 
+echo disable > /sys/class/net/eth3/rtl_adv/sg_en
+
 exit 0

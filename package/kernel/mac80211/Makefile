@@ -593,10 +593,10 @@ define KernelPackage/cfg80211/install
 ifneq ($(CONFIG_RTKWIFI_COMMON),)
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./rtkwifi-common/files/wps*.sh $(1)/usr/bin/
-else
+endif
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/ieee80211
 	$(INSTALL_DATA) ./files/mac80211.hotplug $(1)/etc/hotplug.d/ieee80211/10-wifi-detect
-endif
+
 ifneq ($(CONFIG_RTKWIFIU),)
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
 	$(INSTALL_BIN) ./rtkwifiu/files/brlink-notify.hotplug $(1)/etc/hotplug.d/net/20-brlink-notify

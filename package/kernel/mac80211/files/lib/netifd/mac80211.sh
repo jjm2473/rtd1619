@@ -1,3 +1,5 @@
+#!/bin/sh
+
 mac80211_phy_to_path() {
 	local phy="$1"
 
