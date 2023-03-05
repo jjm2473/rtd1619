@@ -289,7 +289,7 @@ endef
 
 define KernelPackage/rtkwifiu-rtl8852be
   $(call KernelPackage/rtkwifiu/Default)
-  DEPENDS+= @PCI_SUPPORT @PACKAGE_kmod-rtkwifiu
+  DEPENDS+= @PCI_SUPPORT @PACKAGE_kmod-rtkwifiu +@DRIVER_11AX_SUPPORT
   TITLE+= (RTL8852B PCIe)
   FILES:=$(RTKWIFIU_DIR)/rtl8852be/8852be.ko
   AUTOLOAD:=$(call AutoLoad,61,8852be)
@@ -297,7 +297,7 @@ endef
 
 define KernelPackage/rtkwifiu-rtl8822cs
   $(call KernelPackage/rtkwifiu/Default)
-  DEPENDS+= @PACKAGE_kmod-rtkwifiu
+  DEPENDS+= @PACKAGE_kmod-rtkwifiu +@DRIVER_11AX_SUPPORT
   TITLE+= (RTL8822C SDIO)
   FILES:=$(RTKWIFIU_DIR)/rtl8822cs/8822cs.ko
   AUTOLOAD:=$(call AutoProbe,8822cs)
@@ -305,7 +305,7 @@ endef
 
 define KernelPackage/rtkwifiu-rtl8852bs
   $(call KernelPackage/rtkwifiu/Default)
-  DEPENDS+= @PACKAGE_kmod-rtkwifiu
+  DEPENDS+= @PACKAGE_kmod-rtkwifiu +@DRIVER_11AX_SUPPORT
   TITLE+= (RTL8852B SDIO)
   FILES:=$(RTKWIFIU_DIR)/rtl8852bs/8852bs.ko
   AUTOLOAD:=$(call AutoProbe,8852bs)
