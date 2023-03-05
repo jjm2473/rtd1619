@@ -66,9 +66,6 @@ define Device/bleedingedge-emmc-2gb-router
   DEVICE_PACKAGES += $(DEFAULT_PACKAGES.router) $(DEFAULT_PACKAGES.rt1619b_with)
   DEVICE_VARIANT := 2GB
   CLEAR_OVERLAY := n
-  KCONFIG:= \
-  CONFIG_DRIVER_11AX_SUPPORT=y
-
   SUPPORTED_DEVICES := realtek,bleeding-edge-emmc-router
   IMAGE/install.img := rtkimg | append-metadata
 endef
