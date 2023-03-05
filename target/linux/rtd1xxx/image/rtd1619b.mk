@@ -44,17 +44,20 @@ TARGET_DEVICES += bleedingedge-emmc-2gb
 # 加入 路由器需要的 依赖包.
 DEFAULT_PACKAGES.rt1619b_with = \
 kmod-rtl8125 kmod-rtl8152 kmod-rtkwifiu kmod-rtkwifiu-rtl8822cs kmod-rtkwifiu-rtl8852bs \
+kmod-random-core kmod-lib-lz4 kmod-lib-lzo kmod-loop kmod-lib-crc16 kmod-lib-crc32 \
+shortcut-fe \
 ethtool rtk-bluecore curl etherwake netperf \
 blkid blkdev fio hdparm \
 keyutils resize2fs swap-utils tune2fs \
-fdt-utils flock iwinfo lscpu lsof mount-utils \
+fdt-utils flock f2fsck lscpu lsof mount-utils \
 usbutils usbids \
 kmod-fs-ext4 \
 kmod-fs-f2fs \
 logrotate \
 jshn \
-netdata \
-hostapd-utils hostapd-common wpa-cli wpad-mesh-openssl wpa-supplicant \
+netdata veth wireless-regdb \
+pciutils \
+iwinfo hostapd-utils hostapd-common wpa-cli wpad-mesh-openssl \
 luci
 
 define Device/bleedingedge-emmc-2gb-router
