@@ -54,7 +54,7 @@ kmod-fs-f2fs \
 logrotate \
 jshn \
 netdata \
-hostapd-utils hostapd-common wpa-cli wpad-mesh-openssl \
+hostapd-utils hostapd-common wpa-cli wpad-mesh-openssl wpa-supplicant \
 luci
 
 define Device/bleedingedge-emmc-2gb-router
