@@ -1,0 +1,29 @@
+Index: gcompat-1.1.0/libgcompat/fcntl.c
+===================================================================
+--- /dev/null
++++ gcompat-1.1.0/libgcompat/fcntl.c
+@@ -0,0 +1,12 @@
++#include <fcntl.h>
++#include <stdarg.h>
++
++int fcntl64(int __fd, int __cmd, ...) {
++    int ret;
++    va_list ap;
++    va_start(ap, __cmd);
++    ret = fcntl(__fd, __cmd, ap);
++    va_end(ap);
++    return ret;
++}
++
+Index: gcompat-1.1.0/Makefile
+===================================================================
+--- gcompat-1.1.0.orig/Makefile
++++ gcompat-1.1.0/Makefile
+@@ -7,6 +7,7 @@ LIBGCOMPAT_SRC = \
+ 	libgcompat/dlfcn.c		\
+ 	libgcompat/error.c		\
+ 	libgcompat/execinfo.c		\
++	libgcompat/fcntl.c              \
+ 	libgcompat/gnulib.c		\
+ 	libgcompat/grp.c		\
+ 	libgcompat/internal.c		\

@@ -26,7 +26,12 @@ endef
 
 define Package/gcompat/description
  A library which provides glibc-compatible APIs for use on musl libc systems.
+ add fcntl64
+ add pthread_cond_clockwait
 endef
+
+TARGET_CFLAGS += -I$(BUILD_DIR_TOOLCHAIN)/musl/src/internal \
+	-I$(BUILD_DIR_TOOLCHAIN)/musl/arch/$(ARCH)
 
 MAKE_FLAGS += \
 	LINKER_PATH=/lib/ld-musl-$(ARCH).so.1 \

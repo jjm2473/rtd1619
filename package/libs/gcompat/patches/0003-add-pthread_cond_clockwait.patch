@@ -1,0 +1,46 @@
+Index: gcompat-1.1.0/libgcompat/pthread.c
+===================================================================
+--- gcompat-1.1.0.orig/libgcompat/pthread.c
++++ gcompat-1.1.0/libgcompat/pthread.c
+@@ -6,6 +6,10 @@
+ #include <unistd.h>  /* open, read */
+ 
+ #include "alias.h" /* weak_alias */
++#ifndef hidden
++#define hidden
++#endif
++#include "pthread_impl.h"
+ 
+ /**
+  * Underlying function for pthread_cleanup_push.
+@@ -96,3 +100,30 @@ int pthread_mutexattr_setkind_np(pthread
+ 
+ 	return pthread_mutexattr_settype(attr, kind);
+ }
++
++/* See __pthread_cond_wait_common.  */
++int
++pthread_cond_clockwait (pthread_cond_t *cond, pthread_mutex_t *mutex,
++			  clockid_t clockid,
++			  const struct timespec *abstime)
++{
++    if (cond == NULL) {
++        return EINVAL;
++    }
++
++    /* Check parameter validity.  This should also tell the compiler that
++       it can assume that abstime is not NULL.  */
++    if (abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000)
++        return EINVAL;
++
++    switch (clockid) {
++        case CLOCK_MONOTONIC:
++            cond->_c_clock = CLOCK_MONOTONIC;
++            return pthread_cond_timedwait(cond, mutex, abstime);
++        case CLOCK_REALTIME:
++            cond->_c_clock = CLOCK_REALTIME;
++            return pthread_cond_timedwait(cond, mutex, abstime);
++        default:
++            return EINVAL;
++    }
++}
