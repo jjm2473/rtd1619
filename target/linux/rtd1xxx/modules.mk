@@ -121,6 +121,7 @@ define KernelPackage/rtl8152
   TITLE:=Realtek R8152 USB 2.5 Gigabit Ethernet driver
   DEPENDS:=@TARGET_rtd1xxx @USB_SUPPORT
   KCONFIG:=CONFIG_USB_RTL8152
+  CONFLICTS:=kmod-usb-net-rtl8152
   FILES:=$(LINUX_DIR)/drivers/net/usb/r8152/r8152.ko
   AUTOLOAD:=$(call AutoProbe,r8152)
 endef
