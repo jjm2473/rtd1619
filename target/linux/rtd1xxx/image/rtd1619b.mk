@@ -73,12 +73,12 @@ endef
 TARGET_DEVICES += bleedingedge-emmc-2gb-router
 
 # 加入 docker 依赖包.
-DEFAULT_PACKAGES.rt1619b_with_docker = docker-compose dockerd docker luci-app-dockerman kmod-rtk-docker rtktranscode 
+DEFAULT_PACKAGES.rt1619b_with_docker = docker-compose dockerd docker luci-app-dockerman kmod-rtk-docker kmod-rtk-codec rtktranscode 
 
 define Device/bleedingedge-emmc-2gb-router-with-docker
   $(Device/bleedingedge-emmc-2gb-router)
   DEVICE_DTS := rtd1619b-bleedingedge-emmc-2gb-router rtd1619b-rescue
-  DEVICE_MODEL += for Router(Docker)
+  DEVICE_MODEL += (Docker)
   DEVICE_PACKAGES += $(DEFAULT_PACKAGES.rt1619b_with_docker)
 endef
 
