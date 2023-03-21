@@ -29,9 +29,12 @@ PKG_SOURCE_URL:=file://rtk-dl
 # #PKG_MIRROR_HASH:=skip
 # PKG_MIRROR_HASH:=$(PKG_HASH)
 
-PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
+PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
+PKG_BUILD_DEPENDS:=USE_MUSL:gcompat
+
 PREBUILT_DIR:=$(SUBTARGET)_files
 PATCH_DIR:=./$(SUBTARGET)_patches
+PREBUILT_LIB=$(if $(CONFIG_USE_MUSL),musl/lib,lib)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -40,7 +43,7 @@ define Package/rtktranscode
  SECTION:=multimedia
  CATEGORY:=Multimedia
  URL:=https://gitee.com/mpai/easy_porting_ffmpeg_in_mit
- DEPENDS+= +libbz2 +alsa-lib +libgnutls +libpthread +libvpx +zlib  +libstdcpp  @TARGET_rtd1xxx_rtd1619b
+ DEPENDS+= +libbz2 +alsa-lib +libgnutls +libpthread +libvpx +zlib +libstdcpp @TARGET_rtd1xxx_rtd1619b +USE_MUSL:gcompat
 endef
 
 define Package/rtktranscode/description
@@ -53,8 +56,10 @@ REAL_CPU_TYPE:=$(firstword $(subst +, ,$(CONFIG_CPU_TYPE)))
 # Fixup cpu types recogized in configure
 REAL_CPU_TYPE:=$(subst octeonplus,octeon+,$(REAL_CPU_TYPE))
 
-TARGET_CFLAGS += -I$(STAGING_DIR)/usr/local/include
-TARGET_LDFLAGS += -L$(STAGING_DIR)/usr/local/lib -lRMA -Wl,-rpath-link,$(STAGING_DIR)/usr/local/lib
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+TARGET_LDFLAGS += \
+	-L$(STAGING_DIR)/lib -Wl,-rpath-link,$(STAGING_DIR)/lib \
+	-L$(STAGING_DIR)/usr/local/lib -lRMA -Wl,-rpath-link,$(STAGING_DIR)/usr/local/lib
 
 FFMPEG_CONFIGURE:= \
 	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(FPIC)" \
@@ -111,13 +116,12 @@ FFMPEG_CONFIGURE+= \
 
 define Build/Prepare
 	$(Build/Prepare/Default)
-	$(INSTALL_DIR) $(STAGING_DIR)/usr/lib
-	$(INSTALL_DIR) $(STAGING_DIR)/usr/include
-	$(CP) ./$(PREBUILT_DIR)/lib/librma.so $(STAGING_DIR)/usr/lib
-	$(CP) ./$(PREBUILT_DIR)/lib/libRMA.so $(STAGING_DIR)/usr/lib
-	$(CP) ./$(PREBUILT_DIR)/lib/libhwse*.so $(STAGING_DIR)/usr/lib
-	$(CP) ./$(PREBUILT_DIR)/lib/libgeneric_misc.so $(STAGING_DIR)/usr/lib
-	$(CP) ./$(PREBUILT_DIR)/include/* $(STAGING_DIR)/usr/include
+	$(INSTALL_DIR) $(STAGING_DIR)/usr/local/lib
+	$(CP) ./$(PREBUILT_DIR)/$(PREBUILT_LIB)/librma.so $(STAGING_DIR)/usr/local/lib/
+	$(CP) ./$(PREBUILT_DIR)/$(PREBUILT_LIB)/libRMA.so $(STAGING_DIR)/usr/local/lib/
+	$(CP) ./$(PREBUILT_DIR)/$(PREBUILT_LIB)/libhwse*.so $(STAGING_DIR)/usr/local/lib/
+	$(CP) ./$(PREBUILT_DIR)/$(PREBUILT_LIB)/libgeneric_misc.so $(STAGING_DIR)/usr/local/lib/
+	$(CP) ./$(PREBUILT_DIR)/include $(STAGING_DIR)/usr/
 endef
 
 define Build/Configure
@@ -143,11 +147,11 @@ endef
 define Package/rtktranscode/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_DIR) $(1)/usr/local
+	$(INSTALL_DIR) $(1)/usr/local/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ffmpeg $(1)/usr/bin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ffprobe $(1)/usr/bin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{avcodec,avdevice,avfilter,avformat,avutil,swresample,swscale}.so.* $(1)/usr/lib/
-	$(CP) ./$(PREBUILT_DIR)/* $(1)/usr/local/
+	$(CP) ./$(PREBUILT_DIR)/$(PREBUILT_LIB)/* $(1)/usr/local/lib/
 endef
 
 $(eval $(call BuildPackage,rtktranscode))
