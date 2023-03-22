@@ -228,6 +228,78 @@ static const struct irq_domain_ops realtek_mux_irq_domain_ops = {
 	.map	= realtek_mux_irq_domain_map,
 };
 
+enum rtd129x_iso_isr_bits {
+	RTD1295_ISO_ISR_UR0_SHIFT		= 2,
+	RTD1295_ISO_ISR_IRDA_SHIFT		= 5,
+	RTD1295_ISO_ISR_I2C0_SHIFT		= 8,
+	RTD1295_ISO_ISR_I2C1_SHIFT		= 11,
+	RTD1295_ISO_ISR_RTC_HSEC_SHIFT		= 12,
+	RTD1295_ISO_ISR_RTC_ALARM_SHIFT		= 13,
+	RTD1295_ISO_ISR_GPIOA_SHIFT		= 19,
+	RTD1295_ISO_ISR_GPIODA_SHIFT		= 20,
+	RTD1295_ISO_ISR_GPHY_DV_SHIFT		= 29,
+	RTD1295_ISO_ISR_GPHY_AV_SHIFT		= 30,
+	RTD1295_ISO_ISR_I2C1_REQ_SHIFT		= 31,
+};
+
+static const u32 rtd129x_iso_isr_to_scpu_int_en_mask[32] = {
+	[RTD1295_ISO_ISR_UR0_SHIFT]		= BIT(2),
+	[RTD1295_ISO_ISR_IRDA_SHIFT]		= BIT(5),
+	[RTD1295_ISO_ISR_I2C0_SHIFT]		= BIT(8),
+	[RTD1295_ISO_ISR_I2C1_SHIFT]		= BIT(11),
+	[RTD1295_ISO_ISR_RTC_HSEC_SHIFT]	= BIT(12),
+	[RTD1295_ISO_ISR_RTC_ALARM_SHIFT]	= BIT(13),
+	[RTD1295_ISO_ISR_GPIOA_SHIFT]		= BIT(19),
+	[RTD1295_ISO_ISR_GPIODA_SHIFT]		= BIT(20),
+	[RTD1295_ISO_ISR_GPHY_DV_SHIFT]		= BIT(29),
+	[RTD1295_ISO_ISR_GPHY_AV_SHIFT]		= BIT(30),
+	[RTD1295_ISO_ISR_I2C1_REQ_SHIFT]	= BIT(31),
+};
+
+enum rtd129x_misc_isr_bits {
+	RTD1295_MIS_ISR_WDOG_NMI_SHIFT		= 2,
+	RTD1295_MIS_ISR_UR1_SHIFT		= 3,
+	RTD1295_MIS_ISR_UR1_TO_SHIFT		= 5,
+	RTD1295_MIS_ISR_UR2_SHIFT		= 8,
+	RTD1295_MIS_ISR_RTC_MIN_SHIFT		= 10,
+	RTD1295_MIS_ISR_RTC_HOUR_SHIFT		= 11,
+	RTD1295_MIS_ISR_RTC_DATA_SHIFT		= 12,
+	RTD1295_MIS_ISR_UR2_TO_SHIFT		= 13,
+	RTD1295_MIS_ISR_I2C5_SHIFT		= 14,
+	RTD1295_MIS_ISR_I2C4_SHIFT		= 15,
+	RTD1295_MIS_ISR_GPIOA_SHIFT		= 19,
+	RTD1295_MIS_ISR_GPIODA_SHIFT		= 20,
+	RTD1295_MIS_ISR_LSADC0_SHIFT		= 21,
+	RTD1295_MIS_ISR_LSADC1_SHIFT		= 22,
+	RTD1295_MIS_ISR_I2C3_SHIFT		= 23,
+	RTD1295_MIS_ISR_SC0_SHIFT		= 24,
+	RTD1295_MIS_ISR_I2C2_SHIFT		= 26,
+	RTD1295_MIS_ISR_GSPI_SHIFT		= 27,
+	RTD1295_MIS_ISR_FAN_SHIFT		= 29,
+};
+
+static const u32 rtd129x_misc_isr_to_scpu_int_en_mask[32] = {
+	[RTD1295_MIS_ISR_UR1_SHIFT]		= BIT(3),
+	[RTD1295_MIS_ISR_UR1_TO_SHIFT]		= BIT(5),
+	[RTD1295_MIS_ISR_UR2_TO_SHIFT]		= BIT(6),
+	[RTD1295_MIS_ISR_UR2_SHIFT]		= BIT(7),
+	[RTD1295_MIS_ISR_RTC_MIN_SHIFT]		= BIT(10),
+	[RTD1295_MIS_ISR_RTC_HOUR_SHIFT]	= BIT(11),
+	[RTD1295_MIS_ISR_RTC_DATA_SHIFT]	= BIT(12),
+	[RTD1295_MIS_ISR_I2C5_SHIFT]		= BIT(14),
+	[RTD1295_MIS_ISR_I2C4_SHIFT]		= BIT(15),
+	[RTD1295_MIS_ISR_GPIOA_SHIFT]		= BIT(19),
+	[RTD1295_MIS_ISR_GPIODA_SHIFT]		= BIT(20),
+	[RTD1295_MIS_ISR_LSADC0_SHIFT]		= BIT(21),
+	[RTD1295_MIS_ISR_LSADC1_SHIFT]		= BIT(22),
+	[RTD1295_MIS_ISR_SC0_SHIFT]		= BIT(24),
+	[RTD1295_MIS_ISR_I2C2_SHIFT]		= BIT(26),
+	[RTD1295_MIS_ISR_GSPI_SHIFT]		= BIT(27),
+	[RTD1295_MIS_ISR_I2C3_SHIFT]		= BIT(28),
+	[RTD1295_MIS_ISR_FAN_SHIFT]		= BIT(29),
+	[RTD1295_MIS_ISR_WDOG_NMI_SHIFT]	= RTK_MUX_IRQ_ALWAYS_ENABLED,
+};
+
 enum rtd13xx_iso_isr_bits {
 	RTD13XX_ISO_ISR_TC3_SHIFT =		1,
 	RTD13XX_ISO_ISR_UR0_SHIFT =		2,
@@ -480,6 +552,36 @@ static const u32 rtd13xxd_misc_isr_to_scpu_int_en_mask[32] = {
 	[RTD13XXD_ISR_FAN_SHIFT]		= BIT(29),
 };
 
+static struct realtek_irq_mux_subset_cfg rtd129x_iso_irq_cfgs[] = {
+	{ 0xffffcffe, },
+	{ 0x00003001, }, /* rtc */
+};
+
+static const struct realtek_irq_mux_info rtd129x_iso_irq_mux_info = {
+	.isr_offset		= 0x0,
+	.umsk_isr_offset	= 0x4,
+	.scpu_int_en_offset	= 0x40,
+	.isr_to_scpu_int_en_mask = rtd129x_iso_isr_to_scpu_int_en_mask,
+	.cfg = rtd129x_iso_irq_cfgs,
+	.cfg_num = ARRAY_SIZE(rtd129x_iso_irq_cfgs),
+};
+
+static struct realtek_irq_mux_subset_cfg rtd129x_misc_irq_cfgs[] = {
+	{ 0xffffff13, },
+	{ 0x00000004, }, /* wdt */
+	{ 0x00000028, }, /* ur1 */
+	{ 0x000000C0, }, /* ur2 */
+};
+
+static const struct realtek_irq_mux_info rtd129x_misc_irq_mux_info = {
+	.umsk_isr_offset	= 0x8,
+	.isr_offset		= 0xc,
+	.scpu_int_en_offset	= 0x80,
+	.isr_to_scpu_int_en_mask = rtd129x_misc_isr_to_scpu_int_en_mask,
+	.cfg = rtd129x_misc_irq_cfgs,
+	.cfg_num = ARRAY_SIZE(rtd129x_misc_irq_cfgs),
+};
+
 static struct realtek_irq_mux_subset_cfg rtd13xx_iso_irq_cfgs[] = {
 	{ 0xffffcffe, },
 	{ 0x00003001, }, /* rtc */
@@ -571,6 +673,12 @@ static const struct realtek_irq_mux_info rtd13xxd_misc_irq_mux_info = {
 
 static const struct of_device_id realtek_irq_mux_dt_matches[] = {
 	{
+		.compatible = "realtek,rtd129x-iso-irq-mux",
+		.data = &rtd129x_iso_irq_mux_info,
+	}, {
+		.compatible = "realtek,rtd129x-misc-irq-mux",
+		.data = &rtd129x_misc_irq_mux_info,
+	}, {
 		.compatible = "realtek,rtd13xx-iso-irq-mux",
 		.data = &rtd13xx_iso_irq_mux_info,
 	}, {
@@ -655,6 +763,8 @@ static int __init realtek_irq_mux_init(struct device_node *node,
 }
 
 IRQCHIP_PLATFORM_DRIVER_BEGIN(realtek_irq_mux)
+IRQCHIP_MATCH("realtek,rtd129x-iso-irq-mux", realtek_irq_mux_init)
+IRQCHIP_MATCH("realtek,rtd129x-misc-irq-mux", realtek_irq_mux_init)
 IRQCHIP_MATCH("realtek,rtd13xx-iso-irq-mux", realtek_irq_mux_init)
 IRQCHIP_MATCH("realtek,rtd13xx-misc-irq-mux", realtek_irq_mux_init)
 IRQCHIP_MATCH("realtek,rtd16xxb-iso-irq-mux", realtek_irq_mux_init)
