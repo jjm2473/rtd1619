@@ -1,0 +1,144 @@
+From 2800b76efe117cc3beef1b157dc96cf9fc5ed8d1 Mon Sep 17 00:00:00 2001
+From: jjm2473 <1129525450@qq.com>
+Date: Tue, 28 Mar 2023 12:24:31 +0800
+Subject: [PATCH] RMA: fix green screen
+
+Realtek HSE is slower than software copy on rtd1619b, maybe there is a bug or kernel config missing?
+If we disable HSE in kernel? It's faster but we always get green screen.
+So we have to bypass RMA_Memcpy.
+
+I want to use zero copy like RPI, but not working.
+
+Force use software copy, working and faster than Realtek HSE.
+---
+ libavcodec/omx.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 71 insertions(+), 2 deletions(-)
+
+diff --git a/libavcodec/omx.c b/libavcodec/omx.c
+index 62e445b5ca..cb4d07d6ea 100644
+--- a/libavcodec/omx.c
++++ b/libavcodec/omx.c
+@@ -34,6 +34,23 @@ typedef struct RMALibContext {
+     RMA_ERRORTYPE (*rma_Memcpy)(void*, void*, void*, unsigned int);
+ } RMALibContext;
+ 
++/*
++ * Realtek HSE is slower than software copy on rtd1619b, maybe there is a bug or kernel config missing?
++ * If we disable HSE in kernel? It's faster but we always get green screen.
++ * So we have to bypass RMA_Memcpy.
++ */
++/*
++ * I want to use zero copy like RPI, but not working
++ */
++// #define RTK_OMX_ZERO_COPY
++
++/*
++ * Force use software copy.
++ * Working and faster than Realtek HSE.
++ * This is a workaround for HSE.
++ */
++#define RTK_HSE_BROKEN
++
+ #include <dlfcn.h>
+ #include <OMX_Core.h>
+ #include <OMX_Component.h>
+@@ -54,6 +71,10 @@ typedef struct RMALibContext {
+ #include "hevc.h"
+ #include "internal.h"
+ 
++#ifdef RTK_OMX_ZERO_COPY
++static int NULL_VALUE;
++#endif
++
+ #ifdef OMX_SKIP64BIT
+ static OMX_TICKS to_omx_ticks(int64_t value)
+ {
+@@ -319,6 +340,13 @@ static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_dat
+ {
+     OMXCodecContext *s = app_data;
+ 
++#ifdef RTK_OMX_ZERO_COPY
++    if (buffer->pOutputPortPrivate) {
++        av_frame_free((AVFrame**)&buffer->pOutputPortPrivate);
++        buffer->pOutputPortPrivate = NULL;
++    }
++#endif
++
+     append_buffer(&s->input_mutex, &s->input_cond,
+                   &s->num_free_in_buffers, s->free_in_buffers, buffer);
+     return OMX_ErrorNone;
+@@ -644,7 +672,11 @@ static av_cold int omx_component_init(AVCodecContext *avctx, const char *role)
+         return AVERROR(ENOMEM);
+ 
+     for (i = 0; i < s->num_in_buffers && err == OMX_ErrorNone; i++) {
+-            err = OMX_AllocateBuffer(s->handle, &s->in_buffer_headers[i],  s->in_port,  s, in_port_params.nBufferSize);
++#ifdef RTK_OMX_ZERO_COPY
++        err = OMX_UseBuffer(s->handle, &s->in_buffer_headers[i], s->in_port, s, in_port_params.nBufferSize, &NULL_VALUE);
++#else
++        err = OMX_AllocateBuffer(s->handle, &s->in_buffer_headers[i],  s->in_port,  s, in_port_params.nBufferSize);
++#endif
+         if (err == OMX_ErrorNone)
+             s->in_buffer_headers[i]->pAppPrivate = s->in_buffer_headers[i]->pOutputPortPrivate = NULL;
+         else
+@@ -705,6 +737,9 @@ static av_cold void cleanup(OMXCodecContext *s)
+         for (i = 0; i < s->num_in_buffers; i++) {
+             OMX_BUFFERHEADERTYPE *buffer = get_buffer(&s->input_mutex, &s->input_cond,
+                                                       &s->num_free_in_buffers, s->free_in_buffers, 1);
++#ifdef RTK_OMX_ZERO_COPY
++            buffer->pBuffer = NULL;
++#endif
+             OMX_FreeBuffer(s->handle, s->in_port, buffer);
+         }
+         for (i = 0; i < s->num_out_buffers; i++) {
+@@ -909,13 +944,47 @@ static int omx_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
+ 
+         buffer->nFilledLen = av_image_fill_arrays(dst, linesize, buffer->pBuffer, avctx->pix_fmt, s->stride, s->plane_size, 1);
+ 
++#ifdef RTK_OMX_ZERO_COPY
++        buffer->pOutputPortPrivate = NULL;
++        uint8_t *src[4] = { NULL };
++        int src_linesize[4];
++        av_image_fill_arrays(src, src_linesize, frame->data[0], avctx->pix_fmt, s->stride, s->plane_size, 1);
++        if (frame->linesize[0] == src_linesize[0] &&
++            frame->linesize[1] == src_linesize[1] &&
++            frame->linesize[2] == src_linesize[2] &&
++            frame->data[1] == src[1] &&
++            frame->data[2] == src[2]) {
++            // If the input frame happens to have all planes stored contiguously,
++            // with the right strides, just clone the frame and set the OMX
++            // buffer header to point to it
++            AVFrame *local = av_frame_clone(frame);
++            if (!local) {
++                // Return the buffer to the queue so it's not lost
++                append_buffer(&s->input_mutex, &s->input_cond, &s->num_free_in_buffers, s->free_in_buffers, buffer);
++                return AVERROR(ENOMEM);
++            } else {
++                buffer->pOutputPortPrivate = local;
++                buffer->pBuffer = local->data[0];
++            }
++            av_log(avctx, AV_LOG_DEBUG, "OMX zero copy buffer: %p\n", buffer->pBuffer);
++        }
++        else
++#elif !defined(RTK_HSE_BROKEN)
+         if(s->rma_func->rma_CheckValidBuffer(s->handle, frame->rma_data) == 0)
+         {
+             RMA_BUFFERINFO* copy_buffer;
+             copy_buffer = (RMA_BUFFERINFO*)frame->rma_data;
+-            s->rma_func->rma_Memcpy(s->handle, buffer, copy_buffer, copy_buffer->nAllocLen);
++            RMA_ERRORTYPE rtkerr = s->rma_func->rma_Memcpy(s->handle, buffer, copy_buffer, copy_buffer->nAllocLen);
++            if (rtkerr != 0) {
++                av_log(avctx, AV_LOG_ERROR, "RMA_Memcpy failed: %d\n", rtkerr);
++                append_buffer(&s->input_mutex, &s->input_cond, &s->num_free_in_buffers, s->free_in_buffers, buffer);
++                return AVERROR(ENOMEM);
++            } else {
++                av_log(avctx, AV_LOG_DEBUG, "RMA_Memcpy buffer: %p\n", buffer->pBuffer);
++            }
+         }
+         else
++#endif
+         {
+             av_image_copy(dst, linesize, (const uint8_t**) frame->data, frame->linesize, avctx->pix_fmt, avctx->width, avctx->height);
+         }
+-- 
+2.31.0
+
